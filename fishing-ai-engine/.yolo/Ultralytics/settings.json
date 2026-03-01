@@ -1,0 +1,21 @@
+{
+  "settings_version": "0.0.6",
+  "datasets_dir": "/home/luan/IdeaProjects/FishingAPP/datasets",
+  "weights_dir": "weights",
+  "runs_dir": "runs",
+  "uuid": "cb903680004320aa398154322ded7dc5f53f2cb70d71016c17c3ee9ab38455d1",
+  "sync": true,
+  "api_key": "",
+  "openai_api_key": "",
+  "clearml": true,
+  "comet": true,
+  "dvc": true,
+  "hub": true,
+  "mlflow": true,
+  "neptune": true,
+  "raytune": true,
+  "tensorboard": false,
+  "wandb": false,
+  "vscode_msg": true,
+  "openvino_msg": true
+}
