@@ -377,6 +377,7 @@ class MeasurementEngine:
             return None
 
         rh, rw = ruler.shape[:2]
+        ruler_vertical = rh > rw
         hsv = cv2.cvtColor(ruler, cv2.COLOR_BGR2HSV)
 
         lower_red1 = np.array([0, 70, 50], dtype=np.uint8)
@@ -423,34 +424,27 @@ class MeasurementEngine:
             if value is None:
                 continue
 
-            center_x = bx + (bw / 2.0)
-            number_candidates.append((center_x, value))
+            center = (by + (bh / 2.0)) if ruler_vertical else (bx + (bw / 2.0))
+            number_candidates.append((center, value))
 
         if len(number_candidates) < 2:
             return None
 
         number_candidates.sort(key=lambda item: item[0])
 
-        # Estimate local px/cm from consecutive known numbers (10 cm apart).
-        px_per_cm_candidates: list[float] = []
-        for i in range(len(number_candidates) - 1):
-            x_a, v_a = number_candidates[i]
-            x_b, v_b = number_candidates[i + 1]
-            dv = v_b - v_a
-            dx = x_b - x_a
-            if dx <= 0:
-                continue
-            if abs(dv) == 10:
-                px_per_cm_candidates.append(dx / 10.0)
+        coords = np.array([item[0] for item in number_candidates], dtype=float)
+        values = np.array([item[1] for item in number_candidates], dtype=float)
 
-        if len(px_per_cm_candidates) < 2:
+        # Linear ruler mapping: cm ~= slope * coord + intercept.
+        slope, intercept = np.polyfit(coords, values, 1)
+        if abs(slope) < 1e-6:
             return None
-        px_arr = np.array(px_per_cm_candidates, dtype=float)
-        if float(np.mean(px_arr)) <= 0:
+
+        residuals = values - ((slope * coords) + intercept)
+        if float(np.mean(np.abs(residuals))) > 4.0:
             return None
-        if float(np.std(px_arr) / np.mean(px_arr)) > 0.25:
-            return None
-        pixels_per_cm = float(np.median(px_arr))
+
+        pixels_per_cm = 1.0 / float(abs(slope))
         if pixels_per_cm <= 0:
             return None
 
@@ -461,19 +455,8 @@ class MeasurementEngine:
             if ratio < 0.7 or ratio > 1.3:
                 return None
 
-        fish_tail_x = float(fish_bbox[2])
-        tail_relative_x = fish_tail_x - float(x1)
-
-        # Closest number at or left of tail.
-        left_candidates = [item for item in number_candidates if item[0] <= tail_relative_x]
-        if left_candidates:
-            anchor_x, anchor_value = min(left_candidates, key=lambda item: abs(tail_relative_x - item[0]))
-        else:
-            anchor_x, anchor_value = min(number_candidates, key=lambda item: abs(tail_relative_x - item[0]))
-
-        displacement_px = tail_relative_x - anchor_x
-        displacement_cm = displacement_px / pixels_per_cm
-        length_cm = float(anchor_value + displacement_cm)
+        tail_coord = (float(fish_bbox[3]) - float(y1)) if ruler_vertical else (float(fish_bbox[2]) - float(x1))
+        length_cm = float((slope * tail_coord) + intercept)
 
         if length_cm <= 0 or length_cm > 150:
             return None

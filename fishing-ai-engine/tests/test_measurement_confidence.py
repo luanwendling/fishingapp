@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 import cv2
 import numpy as np
@@ -72,6 +73,32 @@ class MeasurementConfidenceTests(unittest.TestCase):
 
         self.assertGreaterEqual(score, 0.0)
         self.assertLessEqual(score, 1.0)
+
+    def test_visible_number_estimation_supports_vertical_ruler(self) -> None:
+        engine = MeasurementEngine(ruler_length_cm=40.0, top_k_frames=2)
+
+        frame = np.full((300, 200, 3), 255, dtype=np.uint8)
+        ruler_bbox = (50.0, 20.0, 110.0, 240.0)
+        fish_bbox = (58.0, 30.0, 100.0, 195.0)
+
+        # Vertical ruler with two red number blobs.
+        cv2.rectangle(frame, (62, 100), (78, 145), (0, 0, 255), -1)
+        cv2.rectangle(frame, (82, 150), (98, 195), (0, 0, 255), -1)
+        # Markers to let mocked OCR identify each blob ROI.
+        cv2.rectangle(frame, (65, 112), (70, 117), (255, 0, 0), -1)
+        cv2.rectangle(frame, (85, 162), (90, 167), (0, 255, 0), -1)
+
+        def fake_ocr(roi_bgr: np.ndarray) -> int:
+            b_mean = float(np.mean(roi_bgr[:, :, 0]))
+            g_mean = float(np.mean(roi_bgr[:, :, 1]))
+            return 30 if b_mean >= g_mean else 40
+
+        with patch.object(MeasurementEngine, "_ocr_red_number", side_effect=fake_ocr):
+            with patch.object(MeasurementEngine, "_calculate_pixels_per_cm_from_ticks", return_value=5.0):
+                length_cm = engine._estimate_length_from_visible_number(frame, ruler_bbox, fish_bbox)
+
+        self.assertIsNotNone(length_cm)
+        self.assertAlmostEqual(float(length_cm), 44.0, delta=1.0)
 
 
 if __name__ == "__main__":
