@@ -16,6 +16,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--epochs", type=int, default=80)
     parser.add_argument("--imgsz", type=int, default=640)
     parser.add_argument("--batch", type=int, default=16)
+    parser.add_argument("--workers", type=int, default=8)
     parser.add_argument("--name", type=str, default="fishing_ai_v2")
     parser.add_argument(
         "--project",
@@ -58,6 +59,7 @@ def main() -> None:
         epochs=args.epochs,
         imgsz=args.imgsz,
         batch=args.batch,
+        workers=args.workers,
         name=args.name,
         project=str(args.project),
         exist_ok=True,
