@@ -1,0 +1,21 @@
+{
+  "settings_version": "0.0.6",
+  "datasets_dir": "C:\\Users\\Usuario\\IdeaProjects\\fishingapp\\fishing-ai-engine\\datasets",
+  "weights_dir": "weights",
+  "runs_dir": "runs",
+  "uuid": "2ec680898d3d3d3b0c00c648227f5fada921160442feb736fced10ae6a348206",
+  "sync": true,
+  "api_key": "",
+  "openai_api_key": "",
+  "clearml": true,
+  "comet": true,
+  "dvc": true,
+  "hub": true,
+  "mlflow": true,
+  "neptune": true,
+  "raytune": true,
+  "tensorboard": false,
+  "wandb": false,
+  "vscode_msg": true,
+  "openvino_msg": true
+}

@@ -27,6 +27,12 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("/home/luan/IdeaProjects/FishingAPP/fishing-ai-engine/ai/models/best.pt"),
     )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default=None,
+        help="Training device (e.g., 'cpu', '0', '0,1').",
+    )
     return parser.parse_args()
 
 
@@ -47,7 +53,7 @@ def main() -> None:
         model_id = "yolov8s.yaml"
         model = YOLO(model_id)
 
-    result = model.train(
+    train_kwargs = dict(
         data=str(args.data),
         epochs=args.epochs,
         imgsz=args.imgsz,
@@ -56,6 +62,10 @@ def main() -> None:
         project=str(args.project),
         exist_ok=True,
     )
+    if args.device:
+        train_kwargs["device"] = args.device
+
+    result = model.train(**train_kwargs)
 
     best = Path(result.save_dir) / "weights" / "best.pt"
     if not best.exists():
